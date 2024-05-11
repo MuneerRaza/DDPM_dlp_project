@@ -20,6 +20,10 @@
         "checkpoint_period": null,
         "resume_state": null
     },
+    "infer":{
+        "checkpoint_dir": "checkpoints",
+        "resume_state": "/kaggle/output/DDPM_dlp_project/checkpoints/Model_1.h5"
+    },
     "normalization": {
         "norm_groups": 8,
         "clip_min": -1.0,

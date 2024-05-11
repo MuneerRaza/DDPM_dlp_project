@@ -1,6 +1,6 @@
 import tensorflow as tf
 import tensorflow_datasets as tfds
-import json
+from tqdm import tqdm
 
 from .data_preprocessing import DataPreprocessor
 
@@ -22,7 +22,7 @@ class DataLoader:
 
         train_preprocessing = lambda x: datapreprocessor.train_preprocessing(x)
         train_ds = (
-            ds.map(train_preprocessing, num_parallel_calls=tf.data.AUTOTUNE)
+            tqdm(ds.map(train_preprocessing, num_parallel_calls=tf.data.AUTOTUNE))
             .batch(self.batch_size, drop_remainder=True)
             .shuffle(self.batch_size * 2)
             .prefetch(tf.data.AUTOTUNE)

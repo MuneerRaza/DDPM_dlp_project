@@ -26,6 +26,9 @@ widths = [first_conv_channels * mult for mult in channel_multiplier]
 total_timesteps = config["training"]["total_timesteps"]
 num_epochs = config["training"]["num_epochs"]
 learning_rate = config["training"]["learning_rate"]
+checkpoint_dir = config["training"]["checkpoint_dir"]
+
+resume_state = config["infer"]["resume_state"]
 
 # Get the normalization configuration
 clip_min = config["normalization"]["clip_min"]
@@ -45,7 +48,7 @@ model = build_model(
 )
 
 # Load the saved weights
-model.ema_network.load_weights('checkpoints/diffusion_model_checkpoint')
+model.ema_network.load_weights(resume_state)
 
 # Now you can use the model for inference
 model.plot_images(num_rows=4, num_cols=8)

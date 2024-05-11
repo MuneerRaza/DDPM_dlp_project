@@ -3,6 +3,8 @@ import json
 import os
 import re
 from tensorflow import keras
+from tqdm import tqdm
+from tqdm.keras import TqdmCallback
 
 from network import build_model
 from dataset.data_loader import DataLoader
@@ -69,6 +71,7 @@ model.compile(
 )
 
 train_ds = dataloader.load_data()
+tqdm_callback = TqdmCallback()
 
 checkpoint_dir = 'checkpoints'
 os.makedirs(checkpoint_dir, exist_ok=True)
@@ -76,6 +79,11 @@ os.makedirs(checkpoint_dir, exist_ok=True)
 # Path where to save the model
 path_checkpoint = os.path.join(checkpoint_dir, "Model_{epoch:04d}.h5")
 
+cp_callback = keras.callbacks.ModelCheckpoint(
+    filepath=path_checkpoint,
+    save_weights_only=True,
+    save_freq=checkpoint_period,
+)
 
 if resume_state:
     model.load_weights(resume_state)
@@ -86,29 +94,15 @@ if resume_state:
 
     print(f"Resuming from {last_epoch} epoch.")
 
-
-if checkpoint_period:
-    cp_callback = keras.callbacks.ModelCheckpoint(
-        filepath=path_checkpoint,
-        save_weights_only=True,
-        save_freq=checkpoint_period,
-    )
-
-
     # Train the model
-    model.fit(
-        train_ds,
-        epochs=num_epochs,
-        batch_size=batch_size,
-        callbacks=[cp_callback],
-    )
-else:
-    # Train the model
-    model.fit(
-        train_ds,
-        epochs=num_epochs,
-        batch_size=batch_size,
-    )
+model.fit(
+    train_ds,
+    epochs=num_epochs,
+    batch_size=batch_size,
+    callbacks=[cp_callback, tqdm_callback] if checkpoint_period else [tqdm_callback],
+    verbose=0,
+)
+    
 
 # Save the model
 model.save_weights(path_checkpoint.format(epoch=num_epochs))
