@@ -1,39 +1,47 @@
 from tensorflow import keras
+import json
 
-from configuration.config import img_size, img_channels, widths, has_attention, num_res_blocks, norm_groups, total_timesteps
-from unet import build_model
-from diffusion_utils import GaussianDiffusion
-from train import DiffusionModel
+from model.diffusion_utils import DataLoader, build_model
 
-# Initialize the same model architecture
-network = build_model(
+# Load the configuration file
+with open("configuration/config.json") as f:
+    config = json.load(f)
+
+# Get the dataset configuration
+dataset_name = config["dataset"]["dataset_name"]
+splits = config["dataset"]["splits"]
+batch_size = config["dataset"]["batch_size"]
+
+# Get the model configuration
+img_size = config["model"]["img_size"]
+img_channels = config["model"]["img_channels"]
+first_conv_channels = config["model"]["first_conv_channels"]
+channel_multiplier = config["model"]["channel_multiplier"]
+has_attention = config["model"]["has_attention"]
+num_res_blocks = config["model"]["num_res_blocks"]
+
+widths = [first_conv_channels * mult for mult in channel_multiplier]
+
+# Get the training configuration
+total_timesteps = config["training"]["total_timesteps"]
+num_epochs = config["training"]["num_epochs"]
+learning_rate = config["training"]["learning_rate"]
+
+# Get the normalization configuration
+clip_min = config["normalization"]["clip_min"]
+clip_max = config["normalization"]["clip_max"]
+norm_groups = config["normalization"]["norm_groups"]
+
+
+model = build_model(
     img_size=img_size,
     img_channels=img_channels,
+    first_conv_channels=first_conv_channels,
     widths=widths,
     has_attention=has_attention,
     num_res_blocks=num_res_blocks,
     norm_groups=norm_groups,
-    activation_fn=keras.activations.swish,
-)
-ema_network = build_model(
-    img_size=img_size,
-    img_channels=img_channels,
-    widths=widths,
-    has_attention=has_attention,
-    num_res_blocks=num_res_blocks,
-    norm_groups=norm_groups,
-    activation_fn=keras.activations.swish,
-)
-
-# Get an instance of the Gaussian Diffusion utilities
-gdf_util = GaussianDiffusion(timesteps=total_timesteps)
-
-# Get the model
-model = DiffusionModel(
-    network=network,
-    ema_network=ema_network,
-    gdf_util=gdf_util,
-    timesteps=total_timesteps,
+    total_timesteps=total_timesteps,
 )
 
 # Load the saved weights

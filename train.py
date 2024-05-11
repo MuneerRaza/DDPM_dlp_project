@@ -1,129 +1,65 @@
-import numpy as np
-import tensorflow as tf
+
+import json
+import os
+import re
 from tensorflow import keras
-import matplotlib.pyplot as plt
 
-from configuration.config import *
-from model.unet import build_model
-from model.diffusion_utils import GaussianDiffusion
-from dataset.data_loader import train_ds
+from network import build_model
+from dataset.data_loader import DataLoader
 
-
-class DiffusionModel(keras.Model):
-    def __init__(self, network, ema_network, timesteps, gdf_util, ema=0.999):
-        super().__init__()
-        self.network = network
-        self.ema_network = ema_network
-        self.timesteps = timesteps
-        self.gdf_util = gdf_util
-        self.ema = ema
-
-    def train_step(self, images):
-        # 1. Get the batch size
-        batch_size = tf.shape(images)[0]
-
-        # 2. Sample timesteps uniformly
-        t = tf.random.uniform(
-            minval=0, maxval=self.timesteps, shape=(batch_size,), dtype=tf.int64
-        )
-
-        with tf.GradientTape() as tape:
-            # 3. Sample random noise to be added to the images in the batch
-            noise = tf.random.normal(shape=tf.shape(images), dtype=images.dtype)
-
-            # 4. Diffuse the images with noise
-            images_t = self.gdf_util.q_sample(images, t, noise)
-
-            # 5. Pass the diffused images and time steps to the network
-            pred_noise = self.network([images_t, t], training=True)
-
-            # 6. Calculate the loss
-            loss = self.loss(noise, pred_noise)
-
-        # 7. Get the gradients
-        gradients = tape.gradient(loss, self.network.trainable_weights)
-
-        # 8. Update the weights of the network
-        self.optimizer.apply_gradients(zip(gradients, self.network.trainable_weights))
-
-        # 9. Updates the weight values for the network with EMA weights
-        for weight, ema_weight in zip(self.network.weights, self.ema_network.weights):
-            ema_weight.assign(self.ema * ema_weight + (1 - self.ema) * weight)
-
-        # 10. Return loss values
-        return {"loss": loss}
-
-    def generate_images(self, num_images=16):
-        # 1. Randomly sample noise (starting point for reverse process)
-        samples = tf.random.normal(
-            shape=(num_images, img_size, img_size, img_channels), dtype=tf.float32
-        )
-        # 2. Sample from the model iteratively
-        for t in reversed(range(0, self.timesteps)):
-            tt = tf.cast(tf.fill(num_images, t), dtype=tf.int64)
-            pred_noise = self.ema_network.predict(
-                [samples, tt], verbose=0, batch_size=num_images
-            )
-            samples = self.gdf_util.p_sample(
-                pred_noise, samples, tt, clip_denoised=True
-            )
-        # 3. Return generated samples
-        return samples
-
-    def plot_images(
-        self, epoch=None, logs=None, num_rows=2, num_cols=8, figsize=(12, 5)
-    ):
-        """Utility to plot images using the diffusion model during training."""
-        generated_samples = self.generate_images(num_images=num_rows * num_cols)
-        generated_samples = (
-            tf.clip_by_value(generated_samples * 127.5 + 127.5, 0.0, 255.0)
-            .numpy()
-            .astype(np.uint8)
-        )
-
-        _, ax = plt.subplots(num_rows, num_cols, figsize=figsize)
-        for i, image in enumerate(generated_samples):
-            if num_rows == 1:
-                ax[i].imshow(image)
-                ax[i].axis("off")
-            else:
-                ax[i // num_cols, i % num_cols].imshow(image)
-                ax[i // num_cols, i % num_cols].axis("off")
-
-        plt.tight_layout()
-        plt.show()
+# Load the configuration file
+with open("configuration/config.json") as f:
+    config = json.load(f)
 
 
-# Build the unet model
-network = build_model(
+# Get the dataset configuration
+dataset_name = config["dataset"]["dataset_name"]
+splits = config["dataset"]["splits"]
+batch_size = config["dataset"]["batch_size"]
+
+# Get the model configuration
+img_size = config["model"]["img_size"]
+img_channels = config["model"]["img_channels"]
+first_conv_channels = config["model"]["first_conv_channels"]
+channel_multiplier = config["model"]["channel_multiplier"]
+has_attention = config["model"]["has_attention"]
+num_res_blocks = config["model"]["num_res_blocks"]
+
+widths = [first_conv_channels * mult for mult in channel_multiplier]
+
+# Get the training configuration
+total_timesteps = config["training"]["total_timesteps"]
+num_epochs = config["training"]["num_epochs"]
+learning_rate = config["training"]["learning_rate"]
+checkpoint_dir = config["training"]["checkpoint_dir"]
+checkpoint_period = config["training"]["checkpoint_period"]
+resume_state = config["training"]["resume_state"]
+
+# Get the normalization configuration
+clip_min = config["normalization"]["clip_min"]
+clip_max = config["normalization"]["clip_max"]
+norm_groups = config["normalization"]["norm_groups"]
+
+# Load the dataset
+train_ds = DataLoader(
+    dataset_name=dataset_name,
+    splits=splits,
+    img_size=img_size,
+    batch_size=batch_size,
+    clip_min=clip_min,
+    clip_max=clip_max,
+)
+
+# Build the model
+model = build_model(
     img_size=img_size,
     img_channels=img_channels,
+    first_conv_channels=first_conv_channels,
     widths=widths,
     has_attention=has_attention,
     num_res_blocks=num_res_blocks,
     norm_groups=norm_groups,
-    activation_fn=keras.activations.swish,
-)
-ema_network = build_model(
-    img_size=img_size,
-    img_channels=img_channels,
-    widths=widths,
-    has_attention=has_attention,
-    num_res_blocks=num_res_blocks,
-    norm_groups=norm_groups,
-    activation_fn=keras.activations.swish,
-)
-ema_network.set_weights(network.get_weights())  # Initially the weights are the same
-
-# Get an instance of the Gaussian Diffusion utilities
-gdf_util = GaussianDiffusion(timesteps=total_timesteps)
-
-# Get the model
-model = DiffusionModel(
-    network=network,
-    ema_network=ema_network,
-    gdf_util=gdf_util,
-    timesteps=total_timesteps,
+    total_timesteps=total_timesteps,
 )
 
 # Compile the model
@@ -132,15 +68,46 @@ model.compile(
     optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
 )
 
-# Train the model
-model.fit(
-    train_ds,
-    epochs=num_epochs,
-    batch_size=batch_size,
-    callbacks=[keras.callbacks.LambdaCallback(on_epoch_end=model.plot_images)],
-)
-import os
+checkpoint_dir = 'checkpoints'
+os.makedirs(checkpoint_dir, exist_ok=True)
 
-# Save the model weights
-os.makedirs("checkpoints", exist_ok=True)
-model.save_weights("checkpoints/diffusion_model_checkpoint")
+# Path where to save the model
+path_checkpoint = os.path.join(checkpoint_dir, "Model_{epoch:04d}.h5")
+
+
+if resume_state:
+    model.load_weights(resume_state)
+    last_epoch = re.search(r'Model_(\d{4})\.h5', resume_state).group(1)
+
+    # Calculate the remaining epochs
+    num_epochs = num_epochs - last_epoch
+
+    print(f"Resuming from {last_epoch} epoch.")
+
+
+if checkpoint_period:
+    cp_callback = keras.callbacks.ModelCheckpoint(
+        filepath=path_checkpoint,
+        save_weights_only=True,
+        save_freq=checkpoint_period,
+    )
+
+
+    # Train the model
+    model.fit(
+        train_ds,
+        epochs=num_epochs,
+        batch_size=batch_size,
+        callbacks=[cp_callback],
+    )
+else:
+    # Train the model
+    model.fit(
+        train_ds,
+        epochs=num_epochs,
+        batch_size=batch_size,
+    )
+
+# Save the model
+model.save_weights(path_checkpoint.format(epoch=num_epochs))
+

@@ -1,0 +1,28 @@
+{
+    "dataset": {
+        "dataset_name": "oxford_flowers102",
+        "splits": ["train"],
+        "batch_size": 32
+    },
+    "model": {
+        "img_size": 64,
+        "img_channels": 3,
+        "first_conv_channels": 64,
+        "channel_multiplier": [1, 2, 4, 8],
+        "has_attention": [false, false, true, true],
+        "num_res_blocks": 2
+    },
+    "training": {
+        "num_epochs": 1,
+        "total_timesteps": 1000,
+        "learning_rate": 2e-4,
+        "checkpoint_dir": "checkpoints",
+        "checkpoint_period": null,
+        "resume_state": null
+    },
+    "normalization": {
+        "norm_groups": 8,
+        "clip_min": -1.0,
+        "clip_max": 1.0
+    }
+}
