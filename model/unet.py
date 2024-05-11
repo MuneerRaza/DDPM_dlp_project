@@ -3,7 +3,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 import math
 
-from config import first_conv_channels
+from configuration.config import first_conv_channels
 
 
 # Kernel initializer to use

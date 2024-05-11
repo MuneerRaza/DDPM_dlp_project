@@ -1,6 +1,6 @@
 from tensorflow import keras
 
-from config import img_size, img_channels, widths, has_attention, num_res_blocks, norm_groups, total_timesteps
+from configuration.config import img_size, img_channels, widths, has_attention, num_res_blocks, norm_groups, total_timesteps
 from unet import build_model
 from diffusion_utils import GaussianDiffusion
 from train import DiffusionModel

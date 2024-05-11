@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
-from config import batch_size, img_size, dataset_name, splits, clip_min, clip_max
+from configuration.config import batch_size, img_size, dataset_name, splits, clip_min, clip_max
 from data_preprocessing import DataPreprocessor
 
 # Load the dataset

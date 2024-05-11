@@ -3,7 +3,7 @@ import tensorflow as tf
 from tensorflow import keras
 import matplotlib.pyplot as plt
 
-from config import *
+from configuration.config import *
 from model.unet import build_model
 from model.diffusion_utils import GaussianDiffusion
 from dataset.data_loader import train_ds
