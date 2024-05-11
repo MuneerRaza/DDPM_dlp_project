@@ -106,8 +106,8 @@ model.fit(
     train_ds,
     epochs=num_epochs,
     batch_size=batch_size,
-    callbacks=[cp_callback, tqdm_callback] if checkpoint_period else [tqdm_callback],
-    verbose=0,
+    callbacks=[cp_callback] if checkpoint_period else [],
+    verbose=1,
 )
     
 
