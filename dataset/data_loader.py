@@ -18,8 +18,9 @@ class DataLoader:
         (ds,) = tfds.load(self.dataset_name, split=self.splits, with_info=False, shuffle_files=True)
 
         # Initialize the DataPreprocessor class
-        train_preprocessing = DataPreprocessor(self.img_size, self.clip_min, self.clip_max)
+        datapreprocessor = DataPreprocessor(self.img_size, self.clip_min, self.clip_max)
 
+        train_preprocessing = lambda x: datapreprocessor.train_preprocessing(x)
         train_ds = (
             ds.map(train_preprocessing, num_parallel_calls=tf.data.AUTOTUNE)
             .batch(self.batch_size, drop_remainder=True)

@@ -41,7 +41,7 @@ clip_max = config["normalization"]["clip_max"]
 norm_groups = config["normalization"]["norm_groups"]
 
 # Load the dataset
-train_ds = DataLoader(
+dataloader = DataLoader(
     dataset_name=dataset_name,
     splits=splits,
     img_size=img_size,
@@ -67,6 +67,8 @@ model.compile(
     loss=keras.losses.MeanSquaredError(),
     optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
 )
+
+train_ds = dataloader.load_data()
 
 checkpoint_dir = 'checkpoints'
 os.makedirs(checkpoint_dir, exist_ok=True)

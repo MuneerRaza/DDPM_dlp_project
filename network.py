@@ -116,7 +116,7 @@ def build_model(
         norm_groups=norm_groups,
         activation_fn=keras.activations.swish,
         first_conv_channels=first_conv_channels
-    )
+    ).build_model()
 
     ema_network = UNet(
         img_size=img_size,
@@ -127,7 +127,7 @@ def build_model(
         norm_groups=norm_groups,
         activation_fn=keras.activations.swish,
         first_conv_channels=first_conv_channels
-    )
+    ).build_model()
     ema_network.set_weights(network.get_weights())  # Initially the weights are the same
 
     # Get an instance of the Gaussian Diffusion utilities
