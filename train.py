@@ -8,7 +8,7 @@ from network import build_model
 from dataset.data_loader import DataLoader
 
 # Load the configuration file
-with open("configuration/config.json") as f:
+with open("/kaggle/working/DDPM_dlp_project/configuration/config.json") as f:
     config = json.load(f)
 
 

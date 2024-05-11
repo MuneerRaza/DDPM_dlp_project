@@ -4,7 +4,7 @@ import json
 from model.diffusion_utils import DataLoader, build_model
 
 # Load the configuration file
-with open("configuration/config.json") as f:
+with open("/kaggle/working/DDPM_dlp_project/configuration/config.json") as f:
     config = json.load(f)
 
 # Get the dataset configuration
