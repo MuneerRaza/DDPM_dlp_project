@@ -2,7 +2,7 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 tfds.disable_progress_bar()
 
-from data_preprocessing import DataPreprocessor
+from .data_preprocessing import DataPreprocessor
 
 class DataLoader:
     def __init__(self, dataset_name, splits, img_size, batch_size, clip_min, clip_max):
