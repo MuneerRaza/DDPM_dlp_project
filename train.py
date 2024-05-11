@@ -13,6 +13,8 @@ from dataset.data_loader import DataLoader
 with open("/kaggle/working/DDPM_dlp_project/configuration/config.json") as f:
     config = json.load(f)
 
+# with open("configuration/config.json") as f:
+#     config = json.load(f)
 
 # Get the dataset configuration
 dataset_name = config["dataset"]["dataset_name"]
@@ -79,11 +81,13 @@ os.makedirs(checkpoint_dir, exist_ok=True)
 # Path where to save the model
 path_checkpoint = os.path.join(checkpoint_dir, "Model_{epoch:04d}.h5")
 
-cp_callback = keras.callbacks.ModelCheckpoint(
-    filepath=path_checkpoint,
-    save_weights_only=True,
-    save_freq=checkpoint_period,
-)
+cp_callback = None
+if checkpoint_period:
+    cp_callback = keras.callbacks.ModelCheckpoint(
+        filepath=path_checkpoint,
+        save_weights_only=True,
+        save_freq=checkpoint_period,
+    )
 
 if resume_state:
     model.load_weights(resume_state)

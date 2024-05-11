@@ -21,11 +21,17 @@ class DataLoader:
         datapreprocessor = DataPreprocessor(self.img_size, self.clip_min, self.clip_max)
 
         train_preprocessing = lambda x: datapreprocessor.train_preprocessing(x)
-        train_ds = (
-            tqdm(ds.map(train_preprocessing, num_parallel_calls=tf.data.AUTOTUNE))
-            .batch(self.batch_size, drop_remainder=True)
-            .shuffle(self.batch_size * 2)
-            .prefetch(tf.data.AUTOTUNE)
-        )
+        
+        # Apply preprocessing to the dataset
+        ds = ds.map(train_preprocessing, num_parallel_calls=tf.data.AUTOTUNE)
+        
+        # Calculate the number of batches in the dataset
+        num_batches = tf.data.experimental.cardinality(ds).numpy() // self.batch_size
+
+        # Apply batching, shuffling and prefetching
+        train_ds = ds.batch(self.batch_size, drop_remainder=True).shuffle(self.batch_size * 2).prefetch(tf.data.AUTOTUNE)
+
+        # Wrap the train_ds with tqdm for progress bar
+        train_ds = tqdm(train_ds, total=num_batches)
 
         return train_ds

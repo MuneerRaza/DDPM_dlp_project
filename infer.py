@@ -7,6 +7,9 @@ from model.diffusion_utils import DataLoader, build_model
 with open("/kaggle/working/DDPM_dlp_project/configuration/config.json") as f:
     config = json.load(f)
 
+# with open("configuration/config.json") as f:
+#     config = json.load(f)
+
 # Get the dataset configuration
 dataset_name = config["dataset"]["dataset_name"]
 splits = config["dataset"]["splits"]
