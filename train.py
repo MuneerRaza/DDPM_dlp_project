@@ -3,7 +3,7 @@ import json
 import os
 import re
 from tensorflow import keras
-from tqdm import tqdm
+import json
 from tqdm.keras import TqdmCallback
 
 from network import build_model
@@ -78,16 +78,19 @@ tqdm_callback = TqdmCallback()
 checkpoint_dir = 'checkpoints'
 os.makedirs(checkpoint_dir, exist_ok=True)
 
-# Path where to save the model
+
 path_checkpoint = os.path.join(checkpoint_dir, "Model_{epoch:04d}.h5")
 
+
+# Adjust the ModelCheckpoint callback
 cp_callback = None
 if checkpoint_period:
     cp_callback = keras.callbacks.ModelCheckpoint(
-        filepath=path_checkpoint,
+        filepath=path_checkpoint.format(epoch='{epoch:04d}'),
         save_weights_only=True,
         save_freq=checkpoint_period,
     )
+
 
 if resume_state:
     model.load_weights(resume_state)

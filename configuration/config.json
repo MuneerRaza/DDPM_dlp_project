@@ -22,7 +22,7 @@
     },
     "infer":{
         "checkpoint_dir": "checkpoints",
-        "resume_state": "/kaggle/output/DDPM_dlp_project/checkpoints/Model_1.h5"
+        "resume_state": "/kaggle/working/checkpoints/Model_1.h5"
         
     },
     "normalization": {

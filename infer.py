@@ -1,7 +1,7 @@
 from tensorflow import keras
 import json
 
-from model.diffusion_utils import DataLoader, build_model
+from network import build_model
 
 # Load the configuration file
 with open("/kaggle/working/DDPM_dlp_project/configuration/config.json") as f:
